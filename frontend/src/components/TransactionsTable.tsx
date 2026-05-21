@@ -3,13 +3,15 @@ import type { Transaction } from '../types';
 
 const PAGE_SIZE = 20;
 
-const CATEGORY_BADGE: Record<string, { bg: string; color: string }> = {
-  Food:          { bg: '#E6F4F3', color: '#00857C' },
-  Transport:     { bg: '#E8EBF3', color: '#2E4170' },
-  Housing:       { bg: '#E6FAF9', color: '#00A99D' },
-  Entertainment: { bg: '#FEF3CD', color: '#B27200' },
-  Utilities:     { bg: '#EDF0F2', color: '#3D4F61' },
+const CATEGORY_BADGE: Record<string, { bg: string; color: string; activeBg: string }> = {
+  Food:          { bg: '#E6F4F3', color: '#00857C', activeBg: '#00857C' },
+  Transport:     { bg: '#E8EBF3', color: '#2E4170', activeBg: '#2E4170' },
+  Housing:       { bg: '#E6FAF9', color: '#00A99D', activeBg: '#00A99D' },
+  Entertainment: { bg: '#FEF3CD', color: '#B27200', activeBg: '#B27200' },
+  Utilities:     { bg: '#EDF0F2', color: '#3D4F61', activeBg: '#3D4F61' },
 };
+
+const CATEGORIES = ['Food', 'Transport', 'Housing', 'Entertainment', 'Utilities'];
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', {
@@ -26,20 +28,31 @@ interface Props {
 
 export default function TransactionsTable({ data }: Props) {
   const [query, setQuery] = useState('');
+  const [activeCategories, setActiveCategories] = useState<Set<string>>(new Set());
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const sentinelRef = useRef<HTMLTableRowElement>(null);
 
-  const filtered = query.trim()
-    ? data.filter((tx) => tx.description.toLowerCase().includes(query.toLowerCase()))
-    : data;
+  const filtered = data.filter((tx) => {
+    const matchesQuery = !query.trim() || tx.description.toLowerCase().includes(query.toLowerCase());
+    const matchesCategory = activeCategories.size === 0 || activeCategories.has(tx.category);
+    return matchesQuery && matchesCategory;
+  });
 
   const visible = filtered.slice(0, visibleCount);
   const hasMore = visibleCount < filtered.length;
 
-  // Reset visible count when search query changes
+  // Reset visible count when filters change
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [query]);
+  }, [query, activeCategories]);
+
+  function toggleCategory(cat: string) {
+    setActiveCategories((prev) => {
+      const next = new Set(prev);
+      next.has(cat) ? next.delete(cat) : next.add(cat);
+      return next;
+    });
+  }
 
   const loadMore = useCallback(() => {
     setVisibleCount((c) => Math.min(c + PAGE_SIZE, filtered.length));
@@ -84,6 +97,43 @@ export default function TransactionsTable({ data }: Props) {
           onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--ath-teal)')}
           onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--ath-border)')}
         />
+      </div>
+
+      {/* Category filter tags */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        {CATEGORIES.map((cat) => {
+          const badge = CATEGORY_BADGE[cat];
+          const isActive = activeCategories.has(cat);
+          return (
+            <button
+              key={cat}
+              onClick={() => toggleCategory(cat)}
+              className="text-xs font-medium px-3 py-1 rounded-full transition-all"
+              style={{
+                backgroundColor: isActive ? badge.activeBg : badge.bg,
+                color: isActive ? 'white' : badge.color,
+                border: `1px solid ${badge.activeBg}`,
+                opacity: activeCategories.size > 0 && !isActive ? 0.5 : 1,
+              }}
+            >
+              {cat}
+              {isActive && <span className="ml-1.5">×</span>}
+            </button>
+          );
+        })}
+        {activeCategories.size > 0 && (
+          <button
+            onClick={() => setActiveCategories(new Set())}
+            className="text-xs px-3 py-1 rounded-full"
+            style={{
+              backgroundColor: 'transparent',
+              color: 'var(--ath-text-muted)',
+              border: '1px solid var(--ath-border)',
+            }}
+          >
+            Clear all
+          </button>
+        )}
       </div>
 
       <div className="overflow-x-auto" style={{ maxHeight: 480, overflowY: 'auto' }}>
