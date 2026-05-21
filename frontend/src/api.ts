@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Transaction, SpendingSummary, BudgetVsActual, Budget, TransactionInput } from './types';
+import type { Transaction, SpendingSummary, BudgetVsActual, Budget, TransactionInput, Insights } from './types';
 
 const client = axios.create({ baseURL: '/api' });
 
@@ -31,3 +31,6 @@ export const fetchAiSuggestions = (category: string, actual: number, budget: num
   client
     .post<{ tips: string[]; source: string }>('/ai-suggestions', { category, actual, budget })
     .then((r) => r.data);
+
+export const fetchInsights = () =>
+  client.get<Insights>('/insights').then((r) => r.data);

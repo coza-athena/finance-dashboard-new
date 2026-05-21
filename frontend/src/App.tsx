@@ -7,6 +7,7 @@ import BudgetComparison from './components/BudgetComparison';
 import MonthlyTotals from './components/MonthlyTotals';
 import AdminPanel from './components/AdminPanel';
 import RecentActivity from './components/RecentActivity';
+import InsightsPanel from './components/InsightsPanel';
 
 export default function App() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -65,6 +66,7 @@ export default function App() {
               <SpendingChart data={summary} />
               <BudgetComparison data={budget} />
             </div>
+            <InsightsPanel />
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2">
                 <TransactionsTable data={transactions} />

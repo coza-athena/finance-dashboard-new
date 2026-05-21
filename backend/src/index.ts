@@ -7,6 +7,7 @@ import spendingSummaryRouter from './routes/spendingSummary';
 import budgetVsActualRouter from './routes/budgetVsActual';
 import budgetsRouter from './routes/budgets';
 import aiSuggestionsRouter from './routes/aiSuggestions';
+import insightsRouter from './routes/insights';
 
 dotenv.config();
 
@@ -21,6 +22,7 @@ app.use('/api/spending-summary', spendingSummaryRouter);
 app.use('/api/budget-vs-actual', budgetVsActualRouter);
 app.use('/api/budgets', budgetsRouter);
 app.use('/api/ai-suggestions', aiSuggestionsRouter);
+app.use('/api/insights', insightsRouter);
 
 initDb()
   .then(() => {

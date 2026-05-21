@@ -29,3 +29,18 @@ export interface TransactionInput {
   amount: number;
   category: string;
 }
+
+export interface BudgetRecommendation {
+  category: string;
+  currentBudget: number;
+  recommendedBudget: number;
+  reason: string;
+}
+
+export interface Insights {
+  summary: string;
+  spendingInsights: string[];
+  budgetRecommendations: BudgetRecommendation[];
+  aiTips: string[];
+  source: 'claude' | 'local';
+}
