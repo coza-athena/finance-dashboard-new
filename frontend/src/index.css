@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ath-teal:        #00857C;
+  --ath-teal-dark:   #006B63;
+  --ath-teal-light:  #E6F4F3;
+  --ath-navy:        #1A2B4B;
+  --ath-navy-light:  #2E4170;
+  --ath-bg:          #F4F6F8;
+  --ath-border:      #D1DCE5;
+  --ath-text:        #3D4F61;
+  --ath-text-muted:  #6B7E8F;
+}
