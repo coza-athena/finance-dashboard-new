@@ -26,4 +26,14 @@ export async function initDb(): Promise<void> {
       monthly_limit NUMERIC(10,2)  NOT NULL
     );
   `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS budget_history (
+      id            SERIAL PRIMARY KEY,
+      category      VARCHAR(50)    NOT NULL,
+      old_limit     NUMERIC(10,2)  NOT NULL,
+      new_limit     NUMERIC(10,2)  NOT NULL,
+      changed_at    TIMESTAMPTZ    NOT NULL DEFAULT NOW()
+    );
+  `);
 }

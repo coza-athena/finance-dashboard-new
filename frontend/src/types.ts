@@ -30,6 +30,14 @@ export interface TransactionInput {
   category: string;
 }
 
+export interface BudgetHistoryEntry {
+  id: number;
+  category: string;
+  old_limit: string;
+  new_limit: string;
+  changed_at: string;
+}
+
 export interface BudgetRecommendation {
   category: string;
   currentBudget: number;

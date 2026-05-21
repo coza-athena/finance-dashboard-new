@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import type { Transaction, Budget, TransactionInput } from '../types';
+import type { Transaction, Budget, TransactionInput, BudgetHistoryEntry } from '../types';
 import {
   fetchTransactions,
   fetchBudgets,
+  fetchBudgetHistory,
   createTransaction,
   updateTransaction,
   deleteTransaction,
@@ -32,12 +33,14 @@ export default function AdminPanel() {
   const [showForm, setShowForm] = useState(false);
 
   const [budgetEdits, setBudgetEdits] = useState<Record<string, string>>({});
+  const [budgetHistory, setBudgetHistory] = useState<BudgetHistoryEntry[]>([]);
 
   useEffect(() => {
-    Promise.all([fetchTransactions(), fetchBudgets()])
-      .then(([txs, buds]) => {
+    Promise.all([fetchTransactions(), fetchBudgets(), fetchBudgetHistory()])
+      .then(([txs, buds, hist]) => {
         setTransactions(txs);
         setBudgets(buds);
+        setBudgetHistory(hist);
         const edits: Record<string, string> = {};
         buds.forEach((b) => { edits[b.category] = b.monthly_limit; });
         setBudgetEdits(edits);
@@ -114,12 +117,20 @@ export default function AdminPanel() {
       setBudgets((prev) =>
         prev.map((b) => (b.category === category ? { ...b, monthly_limit: String(val.toFixed(2)) } : b))
       );
+      const hist = await fetchBudgetHistory();
+      setBudgetHistory(hist);
       showToast(`${category} budget updated`, 'success');
     } catch {
       showToast('Failed to update budget', 'error');
     } finally {
       setSaving(false);
     }
+  }
+
+  function formatHistoryDate(iso: string): string {
+    return new Date(iso).toLocaleString('en-US', {
+      month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
+    });
   }
 
   if (loading) {
@@ -273,33 +284,80 @@ export default function AdminPanel() {
 
       {/* Budgets tab */}
       {tab === 'budgets' && (
-        <div className="bg-white rounded-xl shadow p-6" style={{ border: '1px solid var(--ath-border)' }}>
-          <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--ath-navy)' }}>Manage Monthly Budgets</h2>
-          <div className="space-y-3 max-w-md">
-            {budgets.map((b) => (
-              <div key={b.category} className="flex items-center gap-3">
-                <span className="w-32 text-sm font-medium" style={{ color: 'var(--ath-navy)' }}>{b.category}</span>
-                <div className="flex-1 flex items-center gap-2">
-                  <span className="text-sm" style={{ color: 'var(--ath-text-muted)' }}>$</span>
-                  <input
-                    type="number" min="0" step="1"
-                    value={budgetEdits[b.category] ?? ''}
-                    onChange={(e) => setBudgetEdits((prev) => ({ ...prev, [b.category]: e.target.value }))}
-                    className="flex-1 text-sm px-2 py-1.5 rounded border outline-none"
-                    style={{ borderColor: 'var(--ath-border)', color: 'var(--ath-text)' }}
-                  />
-                </div>
-                <button
-                  onClick={() => handleSaveBudget(b.category)}
-                  disabled={saving}
-                  className="px-3 py-1.5 text-sm text-white rounded hover:opacity-90 disabled:opacity-50"
-                  style={{ backgroundColor: 'var(--ath-teal)' }}
-                >
-                  Save
-                </button>
-              </div>
-            ))}
+        <div className="space-y-6">
+          <div className="bg-white rounded-xl shadow p-6" style={{ border: '1px solid var(--ath-border)' }}>
+            <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--ath-navy)' }}>Manage Monthly Budgets</h2>
+            <div className="space-y-3 max-w-md">
+              {budgets.map((b) => {
+                const lastChange = budgetHistory.find((h) => h.category === b.category);
+                const diff = lastChange ? parseFloat(lastChange.new_limit) - parseFloat(lastChange.old_limit) : null;
+                return (
+                  <div key={b.category} className="flex items-center gap-3">
+                    <div className="w-36">
+                      <span className="text-sm font-medium block" style={{ color: 'var(--ath-navy)' }}>{b.category}</span>
+                      {lastChange && diff !== null && (
+                        <span className="text-xs" style={{ color: diff > 0 ? '#B27200' : '#00857C' }}>
+                          {diff > 0 ? '▲' : '▼'} ${Math.abs(diff).toFixed(0)} · {formatHistoryDate(lastChange.changed_at)}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex-1 flex items-center gap-2">
+                      <span className="text-sm" style={{ color: 'var(--ath-text-muted)' }}>$</span>
+                      <input
+                        type="number" min="0" step="1"
+                        value={budgetEdits[b.category] ?? ''}
+                        onChange={(e) => setBudgetEdits((prev) => ({ ...prev, [b.category]: e.target.value }))}
+                        className="flex-1 text-sm px-2 py-1.5 rounded border outline-none"
+                        style={{ borderColor: 'var(--ath-border)', color: 'var(--ath-text)' }}
+                      />
+                    </div>
+                    <button
+                      onClick={() => handleSaveBudget(b.category)}
+                      disabled={saving}
+                      className="px-3 py-1.5 text-sm text-white rounded hover:opacity-90 disabled:opacity-50"
+                      style={{ backgroundColor: 'var(--ath-teal)' }}
+                    >
+                      Save
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           </div>
+
+          {/* Change history log */}
+          {budgetHistory.length > 0 && (
+            <div className="bg-white rounded-xl shadow p-6" style={{ border: '1px solid var(--ath-border)' }}>
+              <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--ath-navy)' }}>Budget Change History</h3>
+              <div className="space-y-1 max-h-64 overflow-y-auto">
+                {budgetHistory.map((entry) => {
+                  const diff = parseFloat(entry.new_limit) - parseFloat(entry.old_limit);
+                  const increased = diff > 0;
+                  return (
+                    <div key={entry.id} className="flex items-center justify-between py-1.5 border-b text-xs" style={{ borderColor: 'var(--ath-border)' }}>
+                      <div className="flex items-center gap-3">
+                        <span
+                          className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: increased ? '#B27200' : '#00857C' }}
+                        />
+                        <span className="font-medium" style={{ color: 'var(--ath-navy)' }}>{entry.category}</span>
+                        <span style={{ color: 'var(--ath-text-muted)' }}>
+                          ${parseFloat(entry.old_limit).toFixed(0)} → ${parseFloat(entry.new_limit).toFixed(0)}
+                        </span>
+                        <span
+                          className="font-semibold"
+                          style={{ color: increased ? '#B27200' : '#00857C' }}
+                        >
+                          {increased ? '▲' : '▼'} ${Math.abs(diff).toFixed(0)}
+                        </span>
+                      </div>
+                      <span style={{ color: 'var(--ath-text-muted)' }}>{formatHistoryDate(entry.changed_at)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

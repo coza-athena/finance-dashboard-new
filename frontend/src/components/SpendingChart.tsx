@@ -34,7 +34,7 @@ interface Props {
   data: SpendingSummary[];
 }
 
-type ChartRow = { month: string } & Record<string, number>;
+type ChartRow = { month: string } & { [key: string]: string | number };
 
 interface TooltipPayloadItem {
   name: string;

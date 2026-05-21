@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import type { BudgetVsActual } from '../types';
+import type { BudgetVsActual, BudgetHistoryEntry } from '../types';
 import { fetchAiSuggestions } from '../api';
 
 interface Props {
   data: BudgetVsActual[];
+  history: BudgetHistoryEntry[];
 }
 
 interface BarConfig {
@@ -23,8 +24,25 @@ interface TipsState {
   source?: string;
 }
 
-export default function BudgetComparison({ data }: Props) {
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  return `${days}d ago`;
+}
+
+export default function BudgetComparison({ data, history }: Props) {
   const [tipsMap, setTipsMap] = useState<Record<string, TipsState>>({});
+
+  // Most recent change per category
+  const latestChange: Record<string, BudgetHistoryEntry> = {};
+  for (const entry of history) {
+    if (!latestChange[entry.category]) latestChange[entry.category] = entry;
+  }
 
   async function loadTips(category: string, actual: number, budget: number) {
     if (tipsMap[category]?.tips || tipsMap[category]?.loading) return;
@@ -80,13 +98,30 @@ export default function BudgetComparison({ data }: Props) {
           const { glow } = barConfig(pct);
           const isOver = pct > 100;
           const tips = tipsMap[row.category];
+          const change = latestChange[row.category];
+          const changeDiff = change ? parseFloat(change.new_limit) - parseFloat(change.old_limit) : 0;
 
           return (
             <div key={row.category}>
               <div className="flex justify-between text-sm mb-2">
-                <span className="font-semibold tracking-wide uppercase text-xs" style={{ color: 'rgba(180,210,230,0.7)', letterSpacing: '0.08em' }}>
-                  {row.category}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold tracking-wide uppercase text-xs" style={{ color: 'rgba(180,210,230,0.7)', letterSpacing: '0.08em' }}>
+                    {row.category}
+                  </span>
+                  {change && (
+                    <span
+                      title={`Changed from $${parseFloat(change.old_limit).toFixed(0)} → $${parseFloat(change.new_limit).toFixed(0)} · ${timeAgo(change.changed_at)}`}
+                      className="text-xs px-1.5 py-0.5 rounded font-mono font-semibold cursor-default"
+                      style={{
+                        backgroundColor: changeDiff > 0 ? 'rgba(251,191,36,0.15)' : 'rgba(0,255,209,0.1)',
+                        color: changeDiff > 0 ? '#FFD166' : '#00FFD1',
+                        border: `1px solid ${changeDiff > 0 ? 'rgba(251,191,36,0.3)' : 'rgba(0,255,209,0.2)'}`,
+                      }}
+                    >
+                      {changeDiff > 0 ? '▲' : '▼'} ${Math.abs(changeDiff).toFixed(0)}
+                    </span>
+                  )}
+                </div>
                 <span className="text-xs font-bold" style={{ color: glow, textShadow: `0 0 8px ${glow}88` }}>
                   ${actual.toFixed(2)} <span style={{ opacity: 0.5 }}>/ ${budget.toFixed(2)}</span>
                 </span>

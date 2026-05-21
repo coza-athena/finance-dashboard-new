@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Transaction, SpendingSummary, BudgetVsActual, Budget, TransactionInput, Insights } from './types';
+import type { Transaction, SpendingSummary, BudgetVsActual, Budget, TransactionInput, Insights, BudgetHistoryEntry } from './types';
 
 const client = axios.create({ baseURL: '/api' });
 
@@ -14,6 +14,9 @@ export const fetchBudgetVsActual = () =>
 
 export const fetchBudgets = () =>
   client.get<Budget[]>('/budgets').then((r) => r.data);
+
+export const fetchBudgetHistory = () =>
+  client.get<BudgetHistoryEntry[]>('/budgets/history').then((r) => r.data);
 
 export const createTransaction = (data: TransactionInput) =>
   client.post<Transaction>('/transactions', data).then((r) => r.data);

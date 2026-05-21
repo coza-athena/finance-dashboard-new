@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { fetchTransactions, fetchSpendingSummary, fetchBudgetVsActual } from './api';
-import type { Transaction, SpendingSummary, BudgetVsActual } from './types';
+import { fetchTransactions, fetchSpendingSummary, fetchBudgetVsActual, fetchBudgetHistory } from './api';
+import type { Transaction, SpendingSummary, BudgetVsActual, BudgetHistoryEntry } from './types';
 import SpendingChart from './components/SpendingChart';
 import TransactionsTable from './components/TransactionsTable';
 import BudgetComparison from './components/BudgetComparison';
@@ -13,15 +13,17 @@ export default function App() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [summary, setSummary] = useState<SpendingSummary[]>([]);
   const [budget, setBudget] = useState<BudgetVsActual[]>([]);
+  const [budgetHistory, setBudgetHistory] = useState<BudgetHistoryEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<'dashboard' | 'admin'>('dashboard');
 
   useEffect(() => {
-    Promise.all([fetchTransactions(), fetchSpendingSummary(), fetchBudgetVsActual()])
-      .then(([txs, sum, bud]) => {
+    Promise.all([fetchTransactions(), fetchSpendingSummary(), fetchBudgetVsActual(), fetchBudgetHistory()])
+      .then(([txs, sum, bud, hist]) => {
         setTransactions(txs);
         setSummary(sum);
         setBudget(bud);
+        setBudgetHistory(hist);
       })
       .catch(() => setError('Failed to load data. Is the backend running?'));
   }, []);
@@ -64,7 +66,7 @@ export default function App() {
             <MonthlyTotals data={summary} budgets={budget} />
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <SpendingChart data={summary} />
-              <BudgetComparison data={budget} />
+              <BudgetComparison data={budget} history={budgetHistory} />
             </div>
             <InsightsPanel />
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
