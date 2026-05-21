@@ -60,7 +60,7 @@ export default function App() {
 
         {view === 'dashboard' ? (
           <>
-            <MonthlyTotals data={summary} />
+            <MonthlyTotals data={summary} budgets={budget} />
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <SpendingChart data={summary} />
               <BudgetComparison data={budget} />

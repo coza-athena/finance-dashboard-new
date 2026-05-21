@@ -26,3 +26,8 @@ export const deleteTransaction = (id: number) =>
 
 export const updateBudget = (category: string, monthly_limit: number) =>
   client.put<Budget>(`/budgets/${category}`, { monthly_limit }).then((r) => r.data);
+
+export const fetchAiSuggestions = (category: string, actual: number, budget: number) =>
+  client
+    .post<{ tips: string[]; source: string }>('/ai-suggestions', { category, actual, budget })
+    .then((r) => r.data);
