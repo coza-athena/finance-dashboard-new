@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { Transaction } from '../types';
 
 const CATEGORY_BADGE: Record<string, { bg: string; color: string }> = {
@@ -22,9 +23,31 @@ interface Props {
 }
 
 export default function TransactionsTable({ data }: Props) {
+  const [query, setQuery] = useState('');
+
+  const filtered = query.trim()
+    ? data.filter((tx) => tx.description.toLowerCase().includes(query.toLowerCase()))
+    : data;
+
   return (
     <div className="bg-white rounded-xl shadow p-6" style={{ border: '1px solid var(--ath-border)' }}>
-      <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--ath-navy)' }}>Transactions</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold" style={{ color: 'var(--ath-navy)' }}>Transactions</h2>
+        <input
+          type="text"
+          placeholder="Search descriptions..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="text-sm px-3 py-1.5 rounded-lg outline-none w-56"
+          style={{
+            border: '1px solid var(--ath-border)',
+            color: 'var(--ath-text)',
+            backgroundColor: 'var(--ath-bg)',
+          }}
+          onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--ath-teal)')}
+          onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--ath-border)')}
+        />
+      </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left">
           <thead>
@@ -36,7 +59,7 @@ export default function TransactionsTable({ data }: Props) {
             </tr>
           </thead>
           <tbody>
-            {data.map((tx) => {
+            {filtered.map((tx) => {
               const badge = CATEGORY_BADGE[tx.category] ?? { bg: '#F4F6F8', color: '#3D4F61' };
               return (
                 <tr key={tx.id} className="border-b" style={{ borderColor: 'var(--ath-border)' }}
@@ -58,6 +81,11 @@ export default function TransactionsTable({ data }: Props) {
             })}
           </tbody>
         </table>
+        {filtered.length === 0 && (
+          <p className="text-sm text-center py-6" style={{ color: 'var(--ath-text-muted)' }}>
+            No transactions match &ldquo;{query}&rdquo;
+          </p>
+        )}
       </div>
     </div>
   );
