@@ -17,3 +17,15 @@ export interface BudgetVsActual {
   budget: string;
   actual: string;
 }
+
+export interface Budget {
+  category: string;
+  monthly_limit: string;
+}
+
+export interface TransactionInput {
+  date: string;
+  description: string;
+  amount: number;
+  category: string;
+}

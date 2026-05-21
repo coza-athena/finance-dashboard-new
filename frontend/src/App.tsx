@@ -5,12 +5,14 @@ import SpendingChart from './components/SpendingChart';
 import TransactionsTable from './components/TransactionsTable';
 import BudgetComparison from './components/BudgetComparison';
 import MonthlyTotals from './components/MonthlyTotals';
+import AdminPanel from './components/AdminPanel';
 
 export default function App() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [summary, setSummary] = useState<SpendingSummary[]>([]);
   const [budget, setBudget] = useState<BudgetVsActual[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [view, setView] = useState<'dashboard' | 'admin'>('dashboard');
 
   useEffect(() => {
     Promise.all([fetchTransactions(), fetchSpendingSummary(), fetchBudgetVsActual()])
@@ -25,9 +27,26 @@ export default function App() {
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--ath-bg)' }}>
       <header style={{ backgroundColor: 'var(--ath-navy)' }} className="shadow-md">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center gap-3">
-          <div className="w-2 h-8 rounded-sm" style={{ backgroundColor: 'var(--ath-teal)' }} />
-          <h1 className="text-2xl font-bold text-white tracking-tight">Personal Finance Dashboard</h1>
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-2 h-8 rounded-sm" style={{ backgroundColor: 'var(--ath-teal)' }} />
+            <h1 className="text-2xl font-bold text-white tracking-tight">Personal Finance Dashboard</h1>
+          </div>
+          <nav className="flex gap-1">
+            {(['dashboard', 'admin'] as const).map((v) => (
+              <button
+                key={v}
+                onClick={() => setView(v)}
+                className="px-4 py-1.5 text-sm font-medium rounded-md capitalize transition-colors"
+                style={{
+                  backgroundColor: view === v ? 'var(--ath-teal)' : 'transparent',
+                  color: view === v ? 'white' : 'rgba(255,255,255,0.65)',
+                }}
+              >
+                {v}
+              </button>
+            ))}
+          </nav>
         </div>
       </header>
 
@@ -38,14 +57,18 @@ export default function App() {
           </div>
         )}
 
-        <MonthlyTotals data={summary} />
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <SpendingChart data={summary} />
-          <BudgetComparison data={budget} />
-        </div>
-
-        <TransactionsTable data={transactions} />
+        {view === 'dashboard' ? (
+          <>
+            <MonthlyTotals data={summary} />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <SpendingChart data={summary} />
+              <BudgetComparison data={budget} />
+            </div>
+            <TransactionsTable data={transactions} />
+          </>
+        ) : (
+          <AdminPanel />
+        )}
       </main>
     </div>
   );
