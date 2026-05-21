@@ -4,6 +4,7 @@ import type { Transaction, SpendingSummary, BudgetVsActual } from './types';
 import SpendingChart from './components/SpendingChart';
 import TransactionsTable from './components/TransactionsTable';
 import BudgetComparison from './components/BudgetComparison';
+import MonthlyTotals from './components/MonthlyTotals';
 
 export default function App() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -36,6 +37,8 @@ export default function App() {
             {error}
           </div>
         )}
+
+        <MonthlyTotals data={summary} />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <SpendingChart data={summary} />
