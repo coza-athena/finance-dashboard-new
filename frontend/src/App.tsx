@@ -15,7 +15,7 @@ export default function App() {
   const [budget, setBudget] = useState<BudgetVsActual[]>([]);
   const [budgetHistory, setBudgetHistory] = useState<BudgetHistoryEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState<'dashboard' | 'admin'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'insights' | 'admin'>('dashboard');
 
   useEffect(() => {
     Promise.all([fetchTransactions(), fetchSpendingSummary(), fetchBudgetVsActual(), fetchBudgetHistory()])
@@ -37,7 +37,7 @@ export default function App() {
             <h1 className="text-2xl font-bold text-white tracking-tight">Personal Finance Dashboard</h1>
           </div>
           <nav className="flex gap-1">
-            {(['dashboard', 'admin'] as const).map((v) => (
+            {(['dashboard', 'insights', 'admin'] as const).map((v) => (
               <button
                 key={v}
                 onClick={() => setView(v)}
@@ -68,7 +68,6 @@ export default function App() {
               <SpendingChart data={summary} />
               <BudgetComparison data={budget} history={budgetHistory} />
             </div>
-            <InsightsPanel />
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2">
                 <TransactionsTable data={transactions} />
@@ -76,6 +75,8 @@ export default function App() {
               <RecentActivity data={transactions} />
             </div>
           </>
+        ) : view === 'insights' ? (
+          <InsightsPanel />
         ) : (
           <AdminPanel />
         )}
